@@ -16,6 +16,421 @@
     <script type="text/babel">
         // Paste the complete Rivers Racing Game React component code here
         // (The code from the Rivers Racing artifact)
+        import React, { useState, useEffect, useCallback } from 'react';
+import { Play, Pause, RotateCcw, Trophy, Star, Waves, Compass, Map } from 'lucide-react';
+
+const IndianRiversGame = () => {
+  const [gameState, setGameState] = useState('menu'); // 'menu', 'playing', 'paused', 'gameOver'
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [gameSpeed, setGameSpeed] = useState(2);
+  const [boatPosition, setBoatPosition] = useState(50);
+  const [rivers, setRivers] = useState([]);
+  const [obstacles, setObstacles] = useState([]);
+  const [collectedRivers, setCollectedRivers] = useState(new Set());
+  const [currentFact, setCurrentFact] = useState('');
+  const [gameTime, setGameTime] = useState(0);
+  const [level, setLevel] = useState(1);
+
+  const indianRivers = [
+    { name: 'Ganga', fact: 'The longest river in India, flowing 2,525 km from Himalayas to Bay of Bengal!', points: 100, color: '#4F46E5' },
+    { name: 'Yamuna', fact: 'A sacred river and major tributary of Ganga, flows through Delhi and Agra!', points: 80, color: '#7C3AED' },
+    { name: 'Brahmaputra', fact: 'Known as the Red River, it flows through Tibet, India, and Bangladesh!', points: 120, color: '#DC2626' },
+    { name: 'Godavari', fact: 'The longest river in South India, called the Dakshin Ganga!', points: 90, color: '#059669' },
+    { name: 'Krishna', fact: 'Flows through Maharashtra, Karnataka, and Andhra Pradesh!', points: 85, color: '#0891B2' },
+    { name: 'Kaveri', fact: 'The sacred river of South India, flowing through Karnataka and Tamil Nadu!', points: 75, color: '#EA580C' },
+    { name: 'Narmada', fact: 'Flows westward through central India, one of the holy rivers!', points: 70, color: '#65A30D' },
+    { name: 'Tapti', fact: 'Another westward flowing river, parallel to Narmada!', points: 65, color: '#0D9488' },
+    { name: 'Mahanadi', fact: 'Major river of Odisha, known for its delta and rice cultivation!', points: 60, color: '#7C2D12' },
+    { name: 'Indus', fact: 'The river that gave India its name, now mostly flows through Pakistan!', points: 110, color: '#1E40AF' },
+    { name: 'Chenab', fact: 'One of the five rivers of Punjab, tributary of Indus!', points: 55, color: '#BE185D' },
+    { name: 'Ravi', fact: 'Another Punjab river, flows through Himachal Pradesh and Punjab!', points: 50, color: '#7E22CE' },
+    { name: 'Sutlej', fact: 'Longest of the five Punjab rivers, flows into Pakistan!', points: 60, color: '#0F766E' },
+    { name: 'Beas', fact: 'Sacred river mentioned in ancient texts, flows through Punjab!', points: 45, color: '#A21CAF' },
+    { name: 'Tungabhadra', fact: 'Tributary of Krishna river, flows through Karnataka and Andhra Pradesh!', points: 40, color: '#B45309' }
+  ];
+
+  const generateRiver = useCallback(() => {
+    const river = indianRivers[Math.floor(Math.random() * indianRivers.length)];
+    return {
+      id: Math.random(),
+      ...river,
+      x: Math.random() * 80 + 10,
+      y: -10,
+      collected: false
+    };
+  }, []);
+
+  const generateObstacle = useCallback(() => ({
+    id: Math.random(),
+    x: Math.random() * 80 + 10,
+    y: -10,
+    type: Math.random() > 0.5 ? 'rock' : 'log'
+  }), []);
+
+  const startGame = () => {
+    setGameState('playing');
+    setScore(0);
+    setLives(3);
+    setGameSpeed(2);
+    setBoatPosition(50);
+    setRivers([]);
+    setObstacles([]);
+    setCollectedRivers(new Set());
+    setCurrentFact('');
+    setGameTime(0);
+    setLevel(1);
+  };
+
+  const pauseGame = () => {
+    setGameState(gameState === 'paused' ? 'playing' : 'paused');
+  };
+
+  const resetGame = () => {
+    setGameState('menu');
+  };
+
+  const moveBoat = (direction) => {
+    if (gameState !== 'playing') return;
+    
+    setBoatPosition(prev => {
+      if (direction === 'left') {
+        return Math.max(5, prev - 8);
+      } else {
+        return Math.min(95, prev + 8);
+      }
+    });
+  };
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        moveBoat('left');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        moveBoat('right');
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        pauseGame();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [gameState]);
+
+  // Game loop
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    const gameLoop = setInterval(() => {
+      setGameTime(prev => prev + 1);
+      
+      // Move rivers and obstacles
+      setRivers(prev => prev.map(river => ({ ...river, y: river.y + gameSpeed })).filter(river => river.y < 110));
+      setObstacles(prev => prev.map(obstacle => ({ ...obstacle, y: obstacle.y + gameSpeed })).filter(obstacle => obstacle.y < 110));
+
+      // Generate new items
+      if (Math.random() < 0.02) {
+        setRivers(prev => [...prev, generateRiver()]);
+      }
+      if (Math.random() < 0.015) {
+        setObstacles(prev => [...prev, generateObstacle()]);
+      }
+
+      // Check collisions
+      setRivers(prev => prev.map(river => {
+        if (!river.collected && 
+            Math.abs(river.x - boatPosition) < 8 && 
+            river.y > 80 && river.y < 95) {
+          setScore(s => s + river.points);
+          setCollectedRivers(collected => new Set([...collected, river.name]));
+          setCurrentFact(river.fact);
+          return { ...river, collected: true };
+        }
+        return river;
+      }));
+
+      setObstacles(prev => {
+        const hitObstacle = prev.find(obstacle => 
+          Math.abs(obstacle.x - boatPosition) < 6 && 
+          obstacle.y > 80 && obstacle.y < 95
+        );
+        
+        if (hitObstacle) {
+          setLives(l => l - 1);
+          return prev.filter(obstacle => obstacle.id !== hitObstacle.id);
+        }
+        return prev;
+      });
+
+      // Increase difficulty
+      if (gameTime % 500 === 0) {
+        setGameSpeed(prev => Math.min(prev + 0.5, 6));
+        setLevel(prev => prev + 1);
+      }
+    }, 50);
+
+    return () => clearInterval(gameLoop);
+  }, [gameState, gameSpeed, boatPosition, gameTime, generateRiver, generateObstacle]);
+
+  // Check game over
+  useEffect(() => {
+    if (lives <= 0) {
+      setGameState('gameOver');
+    }
+  }, [lives]);
+
+  // Clear fact after 3 seconds
+  useEffect(() => {
+    if (currentFact) {
+      const timer = setTimeout(() => setCurrentFact(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentFact]);
+
+  const getBoatEmoji = () => {
+    const boats = ['🚤', '⛵', '🛥️', '🚣'];
+    return boats[Math.floor(gameTime / 100) % boats.length];
+  };
+
+  if (gameState === 'menu') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+          <div className="text-6xl mb-4">🏁</div>
+          <h1 className="text-3xl font-bold text-blue-800 mb-2">Indian Rivers</h1>
+          <h2 className="text-xl font-semibold text-blue-600 mb-6">Racing Adventure!</h2>
+          <p className="text-gray-700 mb-6">
+            Race your boat down the river and collect Indian river names! 
+            Learn amazing facts about each river while avoiding obstacles!
+          </p>
+          <div className="bg-blue-50 rounded-lg p-4 mb-6">
+            <h3 className="font-bold text-blue-800 mb-2">How to Play:</h3>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>🚤 Use ← → arrows or A/D keys to move</li>
+              <li>🏞️ Collect river names to score points</li>
+              <li>🪨 Avoid rocks and logs</li>
+              <li>📚 Learn facts about each river!</li>
+            </ul>
+          </div>
+          <button
+            onClick={startGame}
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all transform hover:scale-105 shadow-lg"
+          >
+            <Play className="inline mr-2" size={24} />
+            Start Adventure!
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameState === 'gameOver') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-red-400 via-orange-500 to-yellow-500 flex items-center justify-center p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+          <div className="text-6xl mb-4">🏆</div>
+          <h1 className="text-3xl font-bold text-red-800 mb-4">Adventure Complete!</h1>
+          <div className="bg-yellow-50 rounded-lg p-4 mb-6">
+            <p className="text-2xl font-bold text-yellow-800 mb-2">Final Score: {score}</p>
+            <p className="text-lg text-yellow-700 mb-2">Level Reached: {level}</p>
+            <p className="text-md text-yellow-600">Rivers Discovered: {collectedRivers.size}</p>
+          </div>
+          {collectedRivers.size > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h3 className="font-bold text-blue-800 mb-2">Rivers You Discovered:</h3>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(collectedRivers).map(river => (
+                  <span key={river} className="bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-sm">
+                    {river}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex gap-4">
+            <button
+              onClick={startGame}
+              className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105"
+            >
+              <Play className="inline mr-2" size={20} />
+              Play Again
+            </button>
+            <button
+              onClick={resetGame}
+              className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              <RotateCcw className="inline mr-2" size={20} />
+              Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-sky-300 via-blue-400 to-blue-500 relative overflow-hidden">
+      {/* Game UI */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Star className="text-yellow-600" size={20} />
+            <span className="font-bold text-gray-800">{score}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Waves className="text-blue-600" size={20} />
+            <span className="font-bold text-gray-800">Level {level}</span>
+          </div>
+          <div className="flex space-x-1">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full ${
+                  i < lives ? 'bg-red-500' : 'bg-gray-400'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex space-x-2">
+          <button
+            onClick={pauseGame}
+            className="bg-white/80 backdrop-blur-sm hover:bg-white/90 p-3 rounded-2xl transition-all"
+          >
+            {gameState === 'paused' ? <Play size={20} /> : <Pause size={20} />}
+          </button>
+          <button
+            onClick={resetGame}
+            className="bg-white/80 backdrop-blur-sm hover:bg-white/90 p-3 rounded-2xl transition-all"
+          >
+            <RotateCcw size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* River Background */}
+      <div className="absolute inset-0 opacity-20">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-white/30 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 20 + 10}px`,
+              height: `${Math.random() * 20 + 10}px`,
+              animation: `float ${Math.random() * 3 + 2}s ease-in-out infinite`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Game Area */}
+      <div className="relative h-screen">
+        {/* Rivers */}
+        {rivers.map(river => (
+          <div
+            key={river.id}
+            className={`absolute transform -translate-x-1/2 transition-all duration-100 ${
+              river.collected ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+            }`}
+            style={{
+              left: `${river.x}%`,
+              top: `${river.y}%`,
+            }}
+          >
+            <div 
+              className="w-16 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-lg transform hover:scale-110 transition-transform"
+              style={{ backgroundColor: river.color }}
+            >
+              {river.name}
+            </div>
+          </div>
+        ))}
+
+        {/* Obstacles */}
+        {obstacles.map(obstacle => (
+          <div
+            key={obstacle.id}
+            className="absolute transform -translate-x-1/2 text-3xl"
+            style={{
+              left: `${obstacle.x}%`,
+              top: `${obstacle.y}%`,
+            }}
+          >
+            {obstacle.type === 'rock' ? '🪨' : '🪵'}
+          </div>
+        ))}
+
+        {/* Player Boat */}
+        <div
+          className="absolute transform -translate-x-1/2 transition-all duration-100 text-4xl"
+          style={{
+            left: `${boatPosition}%`,
+            top: '85%',
+          }}
+        >
+          {getBoatEmoji()}
+        </div>
+
+        {/* Mobile Controls */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4 md:hidden">
+          <button
+            onTouchStart={() => moveBoat('left')}
+            className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl text-2xl font-bold shadow-lg active:scale-95 transition-all"
+          >
+            ←
+          </button>
+          <button
+            onTouchStart={() => moveBoat('right')}
+            className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl text-2xl font-bold shadow-lg active:scale-95 transition-all"
+          >
+            →
+          </button>
+        </div>
+      </div>
+
+      {/* Fact Display */}
+      {currentFact && (
+        <div className="absolute top-20 left-4 right-4 z-20">
+          <div className="bg-green-500 text-white p-4 rounded-2xl shadow-lg animate-bounce">
+            <p className="font-bold text-center">{currentFact}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Pause Overlay */}
+      {gameState === 'paused' && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-30">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 text-center">
+            <div className="text-4xl mb-4">⏸️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Game Paused</h2>
+            <p className="text-gray-600 mb-6">Press SPACE or tap pause to continue</p>
+            <button
+              onClick={pauseGame}
+              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105"
+            >
+              <Play className="inline mr-2" size={20} />
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default IndianRiversGame;
     </script>
 </body>
 </html>
