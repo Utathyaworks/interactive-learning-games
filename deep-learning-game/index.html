@@ -1,21 +1,383 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Learning Code Testing Game</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
-</head>
-<body>
-    <div id="root"></div>
+import React, { useState, useEffect } from 'react';
+import { Play, Check, X, Trophy, Star, Code, Brain, Zap, Target } from 'lucide-react';
+
+const DeepLearningGame = () => {
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [userCode, setUserCode] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [showHint, setShowHint] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [completedLevels, setCompletedLevels] = useState(new Set());
+  const [streak, setStreak] = useState(0);
+
+  const levels = [
+    {
+      id: 0,
+      title: "Neural Network Basics",
+      difficulty: "Beginner",
+      description: "Create a simple feedforward neural network test",
+      challenge: "Write a test function that verifies a neural network has the correct number of layers.",
+      starterCode: `def test_network_layers(model):\n    # Your code here\n    pass`,
+      solution: `def test_network_layers(model):\n    expected_layers = 3\n    assert len(model.layers) == expected_layers\n    return True`,
+      hint: "Use len() to count layers and assert to check the condition",
+      testCases: [
+        "Should verify model has exactly 3 layers",
+        "Should raise AssertionError if wrong number of layers"
+      ],
+      points: 100
+    },
+    {
+      id: 1,
+      title: "Activation Functions",
+      difficulty: "Beginner",
+      description: "Test activation function outputs",
+      challenge: "Write a test to verify ReLU activation function works correctly.",
+      starterCode: `import numpy as np\n\ndef test_relu_activation(x):\n    # Your code here\n    pass`,
+      solution: `import numpy as np\n\ndef test_relu_activation(x):\n    result = np.maximum(0, x)\n    assert np.all(result >= 0)\n    assert np.array_equal(result, np.where(x > 0, x, 0))\n    return result`,
+      hint: "ReLU should return max(0, x) and all outputs should be non-negative",
+      testCases: [
+        "Should return 0 for negative inputs",
+        "Should return original value for positive inputs"
+      ],
+      points: 150
+    },
+    {
+      id: 2,
+      title: "Loss Functions",
+      difficulty: "Intermediate",
+      description: "Validate loss function calculations",
+      challenge: "Create a test for Mean Squared Error loss function.",
+      starterCode: `def test_mse_loss(y_true, y_pred):\n    # Your code here\n    pass`,
+      solution: `def test_mse_loss(y_true, y_pred):\n    import numpy as np\n    mse = np.mean((y_true - y_pred) ** 2)\n    assert mse >= 0, "MSE should be non-negative"\n    assert isinstance(mse, (int, float, np.number))\n    return mse`,
+      hint: "MSE = mean of squared differences, should always be non-negative",
+      testCases: [
+        "Should calculate correct MSE value",
+        "Should always return non-negative result"
+      ],
+      points: 200
+    },
+    {
+      id: 3,
+      title: "Gradient Testing",
+      difficulty: "Intermediate",
+      description: "Test gradient calculations",
+      challenge: "Write a test to verify gradients are computed correctly using numerical approximation.",
+      starterCode: `def test_gradient_check(func, x, epsilon=1e-5):\n    # Your code here\n    pass`,
+      solution: `def test_gradient_check(func, x, epsilon=1e-5):\n    import numpy as np\n    numerical_grad = (func(x + epsilon) - func(x - epsilon)) / (2 * epsilon)\n    analytical_grad = func.__gradient__(x) if hasattr(func, '__gradient__') else None\n    if analytical_grad is not None:\n        assert np.abs(numerical_grad - analytical_grad) < 1e-4\n    return numerical_grad`,
+      hint: "Use finite differences: (f(x+ε) - f(x-ε)) / (2ε)",
+      testCases: [
+        "Should compute numerical gradient accurately",
+        "Should match analytical gradient within tolerance"
+      ],
+      points: 250
+    },
+    {
+      id: 4,
+      title: "Model Convergence",
+      difficulty: "Advanced",
+      description: "Test training convergence",
+      challenge: "Create a test to verify model loss decreases during training.",
+      starterCode: `def test_training_convergence(model, train_data, epochs=10):\n    # Your code here\n    pass`,
+      solution: `def test_training_convergence(model, train_data, epochs=10):\n    losses = []\n    for epoch in range(epochs):\n        loss = model.train_step(train_data)\n        losses.append(loss)\n    \n    # Check if loss generally decreases\n    initial_loss = losses[0]\n    final_loss = losses[-1]\n    assert final_loss < initial_loss, "Loss should decrease during training"\n    \n    # Check for reasonable convergence\n    improvement = (initial_loss - final_loss) / initial_loss\n    assert improvement > 0.01, "Should show at least 1% improvement"\n    \n    return losses`,
+      hint: "Track losses over epochs and verify they decrease over time",
+      testCases: [
+        "Should show decreasing loss trend",
+        "Should achieve minimum improvement threshold"
+      ],
+      points: 300
+    }
+  ];
+
+  const checkCode = () => {
+    const level = levels[currentLevel];
+    const codeLines = userCode.trim().split('\n').length;
+    const hasRequiredElements = userCode.includes('assert') || userCode.includes('return');
     
-    <script type="text/babel">
-        // Paste the complete Deep Learning Game React component code here
-        // (The code from the Deep Learning artifact)
-    </script>
-</body>
-</html>
+    // Simple code validation
+    if (codeLines < 2) {
+      setFeedback("❌ Your solution seems too short. Try adding more logic!");
+      return;
+    }
+    
+    if (!hasRequiredElements) {
+      setFeedback("❌ Your solution should include assertions or return statements for testing!");
+      return;
+    }
+    
+    // Simulate success for demonstration
+    const success = userCode.length > 50 && hasRequiredElements;
+    
+    if (success) {
+      setScore(score + level.points);
+      setStreak(streak + 1);
+      setCompletedLevels(new Set([...completedLevels, currentLevel]));
+      setFeedback(`✅ Excellent! You earned ${level.points} points! ${streak > 0 ? `🔥 ${streak + 1} streak!` : ''}`);
+      
+      // Unlock next level after a delay
+      setTimeout(() => {
+        if (currentLevel < levels.length - 1) {
+          setCurrentLevel(currentLevel + 1);
+          setUserCode(levels[currentLevel + 1].starterCode);
+          setFeedback('');
+          setShowHint(false);
+          setShowSolution(false);
+        } else {
+          setFeedback('🎉 Congratulations! You completed all levels!');
+        }
+      }, 2000);
+    } else {
+      setLives(lives - 1);
+      setStreak(0);
+      setFeedback("❌ Not quite right. Check your logic and try again!");
+      
+      if (lives <= 1) {
+        setFeedback("💔 Game Over! Restarting...");
+        setTimeout(() => {
+          setLives(3);
+          setScore(0);
+          setCurrentLevel(0);
+          setUserCode(levels[0].starterCode);
+          setCompletedLevels(new Set());
+          setShowHint(false);
+          setShowSolution(false);
+        }, 2000);
+      }
+    }
+  };
+
+  const resetLevel = () => {
+    setUserCode(levels[currentLevel].starterCode);
+    setFeedback('');
+    setShowHint(false);
+    setShowSolution(false);
+  };
+
+  useEffect(() => {
+    setUserCode(levels[currentLevel].starterCode);
+  }, [currentLevel]);
+
+  const level = levels[currentLevel];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-black/30 rounded-lg p-6 mb-6 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Brain className="w-8 h-8 text-purple-400" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                Deep Learning Test Quest
+              </h1>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Star className="w-5 h-5 text-yellow-400" />
+                <span className="font-bold">{score}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Zap className="w-5 h-5 text-orange-400" />
+                <span className="font-bold">{streak}</span>
+              </div>
+              <div className="flex space-x-1">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-3 h-3 rounded-full ${
+                      i < lives ? 'bg-red-500' : 'bg-gray-600'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
+            <div
+              className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${((currentLevel + 1) / levels.length) * 100}%` }}
+            />
+          </div>
+          
+          {/* Level Selector */}
+          <div className="flex space-x-2 overflow-x-auto pb-2">
+            {levels.map((lvl, index) => (
+              <button
+                key={lvl.id}
+                onClick={() => {
+                  if (completedLevels.has(index) || index <= currentLevel) {
+                    setCurrentLevel(index);
+                  }
+                }}
+                className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  index === currentLevel
+                    ? 'bg-purple-600 text-white'
+                    : completedLevels.has(index)
+                    ? 'bg-green-600 text-white'
+                    : index <= currentLevel
+                    ? 'bg-gray-600 text-white hover:bg-gray-500'
+                    : 'bg-gray-800 text-gray-400 cursor-not-allowed'
+                }`}
+                disabled={index > currentLevel && !completedLevels.has(index)}
+              >
+                {completedLevels.has(index) && <Check className="w-4 h-4 inline mr-1" />}
+                Level {index + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Challenge Panel */}
+          <div className="bg-black/30 rounded-lg p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-purple-400">{level.title}</h2>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                level.difficulty === 'Beginner' ? 'bg-green-600' :
+                level.difficulty === 'Intermediate' ? 'bg-yellow-600' : 'bg-red-600'
+              }`}>
+                {level.difficulty}
+              </span>
+            </div>
+            
+            <p className="text-gray-300 mb-4">{level.description}</p>
+            
+            <div className="bg-blue-900/30 rounded-lg p-4 mb-4">
+              <h3 className="font-bold text-blue-400 mb-2 flex items-center">
+                <Target className="w-4 h-4 mr-2" />
+                Challenge
+              </h3>
+              <p className="text-sm">{level.challenge}</p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+              <h3 className="font-bold text-gray-400 mb-2">Test Cases:</h3>
+              <ul className="text-sm space-y-1">
+                {level.testCases.map((testCase, index) => (
+                  <li key={index} className="flex items-center">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mr-2" />
+                    {testCase}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowHint(!showHint)}
+                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                {showHint ? 'Hide Hint' : 'Show Hint'}
+              </button>
+              <button
+                onClick={() => setShowSolution(!showSolution)}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                {showSolution ? 'Hide Solution' : 'Show Solution'}
+              </button>
+              <button
+                onClick={resetLevel}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                Reset Code
+              </button>
+            </div>
+
+            {showHint && (
+              <div className="mt-4 bg-yellow-900/30 rounded-lg p-4">
+                <h3 className="font-bold text-yellow-400 mb-2">💡 Hint:</h3>
+                <p className="text-sm">{level.hint}</p>
+              </div>
+            )}
+
+            {showSolution && (
+              <div className="mt-4 bg-purple-900/30 rounded-lg p-4">
+                <h3 className="font-bold text-purple-400 mb-2">✨ Solution:</h3>
+                <pre className="text-sm bg-gray-800 text-green-400 p-3 rounded-lg overflow-x-auto font-mono">
+                  {level.solution}
+                </pre>
+                <p className="text-xs text-purple-300 mt-2">
+                  💡 Study this solution to understand the correct approach, then try coding it yourself!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Code Editor Panel */}
+          <div className="bg-black/30 rounded-lg p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-blue-400 flex items-center">
+                <Code className="w-5 h-5 mr-2" />
+                Code Editor
+              </h3>
+              <div className="text-sm text-gray-400">
+                Points: {level.points}
+              </div>
+            </div>
+
+            <textarea
+              value={userCode}
+              onChange={(e) => setUserCode(e.target.value)}
+              className="w-full h-64 bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none resize-none"
+              placeholder="Write your test code here..."
+              spellCheck={false}
+            />
+
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={checkCode}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-lg font-bold transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <Play className="w-5 h-5" />
+                <span>Run Tests</span>
+              </button>
+            </div>
+
+            {feedback && (
+              <div className={`mt-4 p-4 rounded-lg ${
+                feedback.includes('✅') ? 'bg-green-900/50 border border-green-500' :
+                feedback.includes('❌') ? 'bg-red-900/50 border border-red-500' :
+                'bg-blue-900/50 border border-blue-500'
+              }`}>
+                <p className="font-medium">{feedback}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Achievement Panel */}
+        {completedLevels.size > 0 && (
+          <div className="mt-6 bg-black/30 rounded-lg p-6 backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-yellow-400 mb-4 flex items-center">
+              <Trophy className="w-5 h-5 mr-2" />
+              Achievements
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className={`text-center p-3 rounded-lg ${completedLevels.size >= 1 ? 'bg-yellow-600' : 'bg-gray-700'}`}>
+                <div className="text-2xl mb-1">🏆</div>
+                <div className="text-sm">First Victory</div>
+              </div>
+              <div className={`text-center p-3 rounded-lg ${streak >= 3 ? 'bg-orange-600' : 'bg-gray-700'}`}>
+                <div className="text-2xl mb-1">🔥</div>
+                <div className="text-sm">Hot Streak</div>
+              </div>
+              <div className={`text-center p-3 rounded-lg ${completedLevels.size >= 3 ? 'bg-purple-600' : 'bg-gray-700'}`}>
+                <div className="text-2xl mb-1">🧠</div>
+                <div className="text-sm">Brain Power</div>
+              </div>
+              <div className={`text-center p-3 rounded-lg ${completedLevels.size === levels.length ? 'bg-green-600' : 'bg-gray-700'}`}>
+                <div className="text-2xl mb-1">👑</div>
+                <div className="text-sm">Master</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DeepLearningGame;
