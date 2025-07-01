@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Learning Games</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const LandingPage = () => {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+                    <div className="container mx-auto px-6 py-12">
+                        {/* Header */}
+                        <div className="text-center mb-16">
+                            <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                🎮 Interactive Learning Games
+                            </h1>
+                            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                                Gamified learning experiences that make education fun and engaging!
+                            </p>
+                        </div>
+                        
+                        {/* Games Grid */}
+                        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                            {/* Deep Learning Game */}
+                            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 transform hover:scale-105 transition-all duration-300">
+                                <div className="text-center mb-6">
+                                    <div className="text-6xl mb-4">🧠</div>
+                                    <h2 className="text-3xl font-bold text-purple-400 mb-2">Deep Learning Quest</h2>
+                                    <p className="text-gray-300">
+                                        Master deep learning concepts through coding challenges and tests
+                                    </p>
+                                </div>
+                                
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
+                                        Neural Networks & Activation Functions
+                                    </div>
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
+                                        Loss Functions & Gradient Testing
+                                    </div>
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-purple-400 rounded-full mr-3"></span>
+                                        Model Convergence & Training
+                                    </div>
+                                </div>
+                                
+                                <a 
+                                    href="./deep-learning-game/" 
+                                    className="block w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-center py-4 rounded-xl font-bold transition-all transform hover:scale-105"
+                                >
+                                    🚀 Start Learning
+                                </a>
+                            </div>
+                            
+                            {/* Rivers Game */}
+                            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 transform hover:scale-105 transition-all duration-300">
+                                <div className="text-center mb-6">
+                                    <div className="text-6xl mb-4">🏞️</div>
+                                    <h2 className="text-3xl font-bold text-blue-400 mb-2">Rivers Racing Adventure</h2>
+                                    <p className="text-gray-300">
+                                        Explore Indian rivers through an exciting boat racing game
+                                    </p>
+                                </div>
+                                
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
+                                        15+ Major Indian Rivers
+                                    </div>
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
+                                        Fun Facts & Geography
+                                    </div>
+                                    <div className="flex items-center text-sm">
+                                        <span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>
+                                        Exciting Racing Gameplay
+                                    </div>
+                                </div>
+                                
+                                <a 
+                                    href="./rivers-game/" 
+                                    className="block w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-center py-4 rounded-xl font-bold transition-all transform hover:scale-105"
+                                >
+                                    🏁 Start Racing
+                                </a>
+                            </div>
+                        </div>
+                        
+                        {/* Features */}
+                        <div className="mt-16 text-center">
+                            <h3 className="text-2xl font-bold mb-8 text-gray-300">✨ Features</h3>
+                            <div className="grid md:grid-cols-4 gap-6">
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <div className="text-3xl mb-2">🎯</div>
+                                    <h4 className="font-bold mb-1">Gamified Learning</h4>
+                                    <p className="text-sm text-gray-400">Points, levels, and achievements</p>
+                                </div>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <div className="text-3xl mb-2">📱</div>
+                                    <h4 className="font-bold mb-1">Mobile Friendly</h4>
+                                    <p className="text-sm text-gray-400">Works on all devices</p>
+                                </div>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <div className="text-3xl mb-2">🧠</div>
+                                    <h4 className="font-bold mb-1">Educational</h4>
+                                    <p className="text-sm text-gray-400">Learn while having fun</p>
+                                </div>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <div className="text-3xl mb-2">🆓</div>
+                                    <h4 className="font-bold mb-1">Free & Open</h4>
+                                    <p className="text-sm text-gray-400">No cost, open source</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Footer */}
+                        <div className="mt-16 text-center text-gray-400">
+                            <p>Built with ❤️ using React & Tailwind CSS</p>
+                            <p className="mt-2">
+                                <a href="https://github.com/yourusername/interactive-learning-games" 
+                                   className="text-blue-400 hover:text-blue-300 transition-colors">
+                                    View on GitHub
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<LandingPage />, document.getElementById('root'));
+    </script>
+</body>
+</html>
